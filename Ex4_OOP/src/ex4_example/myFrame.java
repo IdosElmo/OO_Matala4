@@ -394,7 +394,13 @@ public class myFrame extends JPanel {
 				int x2 = game.getPlayer().getLocation().ix();
 				int y2 = game.getPlayer().getLocation().iy();
 				
-				double angle = Math.atan(Math.abs(y2 - y) / Math.abs(x2-x));
+				Point3D p= new Point3D(x,y);
+				Point3D p2= map.image2frame(p, frame.getWidth(), frame.getHeight());
+				LatLonAlt p3 = map.frame2world(p2);
+				double[] a= player.getLocation().azimuth_elevation_dist(p3);
+				double angle= a[0];
+				
+//				double angle = Math.atan(Math.abs(y2 - y) / Math.abs(x2-x));
 				System.out.println(game.getPlayer().getLocation());
 				play.rotate(angle);
 				System.out.println(game.getPlayer().getLocation());
