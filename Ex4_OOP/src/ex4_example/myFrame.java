@@ -39,7 +39,7 @@ public class myFrame extends JPanel {
 	private ArrayList<Packman> ghosts;
 	private ArrayList<GeoBox> boxes;
 	private Game game;
-
+//
 	private BufferedImage backroundImage;
 	private BufferedImage pacmanImage;
 	private BufferedImage fruitImage;
