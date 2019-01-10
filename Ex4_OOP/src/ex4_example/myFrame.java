@@ -215,32 +215,54 @@ public class myFrame extends JPanel {
 //	}
 		
 		for (Packman pac : pacmans) {
+			Packman p = new Packman(pac);
+			LatLonAlt test = p.getLocation();
+			Point3D test2 = map.world2frame(test);
+			p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
 			g.drawImage(pacmanImage, pac.getLocation().ix(), pac.getLocation().iy(), 30, 30, frame);
 
 		}
 
 		for (Packman ghost : ghosts) {
-			g.drawImage(ghostImage, ghost.getLocation().ix(), ghost.getLocation().iy(), 30, 30, frame);
+			Packman gh = new Packman(ghost);
+			LatLonAlt test = ghost.getLocation();
+			Point3D test2 = map.world2frame(test);
+			gh.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
+			g.drawImage(ghostImage, gh.getLocation().ix(), gh.getLocation().iy(), 30, 30, frame);
 		}
 
 		for (Fruit fruit : fruits) {
-			g.drawImage(fruitImage, fruit.getLocation().ix(),  fruit.getLocation().iy(), 30, 30, frame);
+			LatLonAlt test = fruit.getLocation();
+			Point3D test2 = map.world2frame(test);
+			Fruit f = new Fruit(new LatLonAlt(test2.x(), test2.y(),test.z() ));
+			g.drawImage(fruitImage, f.getLocation().ix(),  f.getLocation().iy(), 30, 30, frame);
 		}
 
 		for (GeoBox box : boxes) {
-			int width = (int) Math.abs(box.getMin().lat() - box.getMax().lat());
-			int height = (int) Math.abs(box.getMax().lon() - box.getMin().lon());
 			
-			int x2 = (int) (box.getMin().lat());
-			int y2 = (int) (box.getMin().lon());
+			LatLonAlt minTemp = box.getMin();
+			LatLonAlt maxTemp = box.getMax();
+			Point3D test1 = map.world2frame(minTemp);
+			Point3D test2 = map.world2frame(maxTemp);
+			
+			LatLonAlt min = new LatLonAlt(test1.x(),test1.y(),test1.z());
+			LatLonAlt max = new LatLonAlt(test2.x(),test2.y(),test2.z());
+			
+			GeoBox box2 = new GeoBox(min,max);
+			
+			int width = (int) Math.abs(box2.getMin().lat() - box2.getMax().lat());
+			int height = (int) Math.abs(box2.getMax().lon() - box2.getMin().lon());
+			
+			int x2 = (int) (box2.getMin().lat());
+			int y2 = (int) (box2.getMin().lon());
 			g.drawRect(x2, y2, width, height);
 			g.fillRect(x2, y2, width, height);
 		}
 
 		if (gameStarted) { //will be false after nmouse click.
 			Packman p = new Packman(game.getPlayer());
-			g.drawImage(playerImage, p.getLocation().ix() - 25, p.getLocation().iy() - 65, 30, 30, frame);
-			System.out.println(p.getLocation().ix());
+			Point3D point = map.world2frame(p.getLocation());
+			g.drawImage(playerImage, point.ix() - 25, point.iy() - 65, 30, 30, frame);
 		}
 	}
 
@@ -276,51 +298,43 @@ public class myFrame extends JPanel {
 				chooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
 				chooser.showOpenDialog(null);
 				File file = chooser.getSelectedFile();
-				Game gameTemp = new Game(file.getPath());
-				System.out.println(gameTemp.getGame().size());
-				for (int i = 0; i < gameTemp.getGame().size(); i++) {
-					if (gameTemp.getGame().get(i).startsWith("M")) {
-						player = new Packman(gameTemp.getGame().get(i));
-						game.add(player);
+				game = new Game(file.getPath());
+				for (int i = 0; i < game.getGame().size(); i++) {
+					if (game.getGame().get(i).startsWith("M")) {
+						player = new Packman(game.getGame().get(i));
+						game.setPlayer(player);
 					}
-					if (gameTemp.getGame().get(i).startsWith("P")) {
-						Packman p = new Packman(gameTemp.getGame().get(i));
+					if (game.getGame().get(i).startsWith("P")) {
+						Packman p = new Packman(game.getGame().get(i));
 						LatLonAlt test = p.getLocation();
 						Point3D test2 = map.world2frame(test);
 						p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
 						pacmans.add(p);
-						game.add(p);
 					}
-					if (gameTemp.getGame().get(i).startsWith("G")) {
-						Packman ghost = new Packman(gameTemp.getGame().get(i));
-						LatLonAlt test = ghost.getLocation();
-						Point3D test2 = map.world2frame(test);
-						ghost.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
+					if (game.getGame().get(i).startsWith("G")) {
+						Packman ghost = new Packman(game.getGame().get(i));
 						ghosts.add(ghost);
-						game.add(ghost);
 					}
-					if (gameTemp.getGame().get(i).startsWith("F")) {
-						Fruit fruit = new Fruit(gameTemp.getGame().get(i));
-						LatLonAlt test = fruit.getLocation();
-						Point3D test2 = map.world2frame(test);
-						Fruit fruit2 = new Fruit(new LatLonAlt(test2.x(), test2.y(),test.z() ));
-						fruits.add(fruit2);
-						game.add(fruit2);
+					if (game.getGame().get(i).startsWith("F")) {
+						Fruit fruit = new Fruit(game.getGame().get(i));
+//						LatLonAlt test = fruit.getLocation();
+//						Point3D test2 = map.world2frame(test);
+//						Fruit fruit2 = new Fruit(new LatLonAlt(test2.x(), test2.y(),test.z() ));
+						fruits.add(fruit);
 					}
-					if (gameTemp.getGame().get(i).startsWith("B")) {
-						GeoBox box = new GeoBox(gameTemp.getGame().get(i));
-				
-						LatLonAlt minTemp = box.getMin();
-						LatLonAlt maxTemp = box.getMax();
-						Point3D test1 = map.world2frame(minTemp);
-						Point3D test2 = map.world2frame(maxTemp);
-						
-						LatLonAlt min = new LatLonAlt(test1.x(),test1.y(),test1.z());
-						LatLonAlt max = new LatLonAlt(test2.x(),test2.y(),test2.z());
-						
-						GeoBox box2 = new GeoBox(min,max);
-						boxes.add(box2);
-						game.add(box2);
+					if (game.getGame().get(i).startsWith("B")) {
+						GeoBox box = new GeoBox(game.getGame().get(i));
+//				
+//						LatLonAlt minTemp = box.getMin();
+//						LatLonAlt maxTemp = box.getMax();
+//						Point3D test1 = map.world2frame(minTemp);
+//						Point3D test2 = map.world2frame(maxTemp);
+//						
+//						LatLonAlt min = new LatLonAlt(test1.x(),test1.y(),test1.z());
+//						LatLonAlt max = new LatLonAlt(test2.x(),test2.y(),test2.z());
+//						
+//						GeoBox box2 = new GeoBox(min,max);
+						boxes.add(box);
 					}
 				}
 				repaint();
@@ -361,12 +375,13 @@ public class myFrame extends JPanel {
 			System.out.println("(" + e.getX() + "," + e.getY() + ")");
 //			play.setInitLocation(e.getX(), e.getY());
 			if (gameLoaded && e.getClickCount() == 1) {
-				LatLonAlt point = new LatLonAlt((double) e.getX(), (double) e.getY(), 0);
-				player = new Packman(point, 2);
-//				player.setLocation(point);
+				Point3D point = new Point3D((double) e.getX(), (double) e.getY(), 0);
+				Point3D point2 = map.image2frame(point, frame.getWidth(), frame.getHeight());
+				LatLonAlt point3 = map.frame2world(point2);
+				player = new Packman(point3, 2);
 				game.setPlayer(player);
-				play.setInitLocation(e.getX(), e.getY());
-				System.out.println("click get player :" + game.getPlayer());
+				play.setInitLocation(point3.ix(), point3.iy());
+//				System.out.println("click get player :" + game.getPlayer());
 				revalidate();
 				repaint();
 				play.start();
@@ -380,11 +395,10 @@ public class myFrame extends JPanel {
 				int y2 = game.getPlayer().getLocation().iy();
 				
 				double angle = Math.atan(Math.abs(y2 - y) / Math.abs(x2-x));
-				
-				System.out.println(game.getTarget(0));
-				System.out.println("hi:" +game.getPlayer().getLocation());
-				System.out.println("test: "+game.getPlayer().distance3D(game.getTarget(0)));
+				System.out.println(game.getPlayer().getLocation());
 				play.rotate(angle);
+				System.out.println(game.getPlayer().getLocation());
+				repaint();
 			}
 		}
 	}
