@@ -321,36 +321,39 @@ public class myFrame extends JPanel {
 				chooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
 				chooser.showOpenDialog(null);
 				File file = chooser.getSelectedFile();
-				game = new Game(file.getPath());
-				System.out.println(game.getGame().size());
-				for (int i = 0; i < game.getGame().size(); i++) {
-					System.out.println(game.getGame().get(i).toString());
-					if (game.getGame().get(i).startsWith("M")) {
-						player = new Packman(game.getGame().get(i));
+				Game gameTemp = new Game(file.getPath());
+				System.out.println(gameTemp.getGame().size());
+				for (int i = 0; i < gameTemp.getGame().size(); i++) {
+					if (gameTemp.getGame().get(i).startsWith("M")) {
+						player = new Packman(gameTemp.getGame().get(i));
+						game.add(player);
 					}
-					if (game.getGame().get(i).startsWith("P")) {
-						Packman p = new Packman(game.getGame().get(i));
+					if (gameTemp.getGame().get(i).startsWith("P")) {
+						Packman p = new Packman(gameTemp.getGame().get(i));
 						LatLonAlt test = p.getLocation();
 						Point3D test2 = map.world2frame(test);
 						p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
 						pacmans.add(p);
+						game.add(p);
 					}
-					if (game.getGame().get(i).startsWith("G")) {
-						Packman ghost = new Packman(game.getGame().get(i));
+					if (gameTemp.getGame().get(i).startsWith("G")) {
+						Packman ghost = new Packman(gameTemp.getGame().get(i));
 						LatLonAlt test = ghost.getLocation();
 						Point3D test2 = map.world2frame(test);
 						ghost.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
 						ghosts.add(ghost);
+						game.add(ghost);
 					}
-					if (game.getGame().get(i).startsWith("F")) {
-						Fruit fruit = new Fruit(game.getGame().get(i));
+					if (gameTemp.getGame().get(i).startsWith("F")) {
+						Fruit fruit = new Fruit(gameTemp.getGame().get(i));
 						LatLonAlt test = fruit.getLocation();
 						Point3D test2 = map.world2frame(test);
 						Fruit fruit2 = new Fruit(new LatLonAlt(test2.x(), test2.y(),test.z() ));
 						fruits.add(fruit2);
+						game.add(fruit2);
 					}
-					if (game.getGame().get(i).startsWith("B")) {
-						GeoBox box = new GeoBox(game.getGame().get(i));
+					if (gameTemp.getGame().get(i).startsWith("B")) {
+						GeoBox box = new GeoBox(gameTemp.getGame().get(i));
 				
 						LatLonAlt minTemp = box.getMin();
 						LatLonAlt maxTemp = box.getMax();
@@ -362,10 +365,17 @@ public class myFrame extends JPanel {
 						
 						GeoBox box2 = new GeoBox(min,max);
 						boxes.add(box2);
+						game.add(box2);
 					}
 				}
 				repaint();
-				play = new Play(file.getPath());
+				play = new Play(game);
+				
+				ArrayList<String> board_data = play.getBoard();
+				for(int i=0;i<board_data.size();i++) {
+					System.out.println(board_data.get(i));
+				}
+				
 				play.setIDs(206008153, 206008154, 206008155);
 				gameLoaded = true;
 			}
@@ -402,32 +412,17 @@ public class myFrame extends JPanel {
 				game.setPlayer(player);
 				play.setInitLocation(e.getX(), e.getY());
 				System.out.println("click get player :" + game.getPlayer());
-
 				revalidate();
 				repaint();
 				play.start();
 				gameStarted = play.isRuning();
-//				play();
-//				gameLoaded = false;
+				gameLoaded = false;
 			}
-
-		}
-
-		public void play() {
-			for (int i = 0; i < 5; i++) {
-				play.rotate(36 * i);
-				System.out.println("** " + i + "***");
-
-				// 7.2) get the current score of the game
-				String info = play.getStatistics();
-				System.out.println(info);
-				// 7.3) get the game-board current state
-				board_data = play.getBoard();
-				for (int a = 0; a < board_data.size(); a++) {
-					System.out.println(board_data.get(a));
-//					objectsMove += board_data.get(a).toString() + "\n";
-				}
-				System.out.println();
+			if (gameStarted) {
+				int x = e.getX();
+				int y = e.getY();
+				System.out.println(game.getTarget(0));
+				play.rotate(36);
 			}
 		}
 	}
