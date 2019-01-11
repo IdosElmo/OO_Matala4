@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
@@ -215,27 +216,22 @@ public class myFrame extends JPanel {
 //	}
 		
 		for (Packman pac : pacmans) {
-			Packman p = new Packman(pac);
-			LatLonAlt test = p.getLocation();
+			LatLonAlt test = pac.getLocation();
 			Point3D test2 = map.world2frame(test);
-			p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
-			g.drawImage(pacmanImage, pac.getLocation().ix(), pac.getLocation().iy(), 30, 30, frame);
+			g.drawImage(pacmanImage, test2.ix(), test2.iy(), 30, 30, frame);
 
 		}
 
 		for (Packman ghost : ghosts) {
-			Packman gh = new Packman(ghost);
 			LatLonAlt test = ghost.getLocation();
 			Point3D test2 = map.world2frame(test);
-			gh.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
-			g.drawImage(ghostImage, gh.getLocation().ix(), gh.getLocation().iy(), 30, 30, frame);
+			g.drawImage(ghostImage, test2.ix(),test2.iy(), 30, 30, frame);
 		}
 
 		for (Fruit fruit : fruits) {
 			LatLonAlt test = fruit.getLocation();
 			Point3D test2 = map.world2frame(test);
-			Fruit f = new Fruit(new LatLonAlt(test2.x(), test2.y(),test.z() ));
-			g.drawImage(fruitImage, f.getLocation().ix(),  f.getLocation().iy(), 30, 30, frame);
+			g.drawImage(fruitImage, test2.ix(),  test2.iy(), 30, 30, frame);
 		}
 
 		for (GeoBox box : boxes) {
@@ -262,7 +258,7 @@ public class myFrame extends JPanel {
 		if (gameStarted) { //will be false after nmouse click.
 			Packman p = new Packman(game.getPlayer());
 			Point3D point = map.world2frame(p.getLocation());
-			g.drawImage(playerImage, point.ix() - 25, point.iy() - 65, 30, 30, frame);
+			g.drawImage(playerImage, point.ix() - 15, point.iy() - 65, 30, 30, frame);
 		}
 	}
 
@@ -306,9 +302,9 @@ public class myFrame extends JPanel {
 					}
 					if (game.getGame().get(i).startsWith("P")) {
 						Packman p = new Packman(game.getGame().get(i));
-						LatLonAlt test = p.getLocation();
-						Point3D test2 = map.world2frame(test);
-						p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
+//						LatLonAlt test = p.getLocation();
+//						Point3D test2 = map.world2frame(test);
+//						p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
 						pacmans.add(p);
 					}
 					if (game.getGame().get(i).startsWith("G")) {
@@ -391,20 +387,42 @@ public class myFrame extends JPanel {
 			if (gameStarted) {
 				int x = e.getX();
 				int y = e.getY();
-				int x2 = game.getPlayer().getLocation().ix();
-				int y2 = game.getPlayer().getLocation().iy();
 				
-				Point3D p= new Point3D(x,y);
-				Point3D p2= map.image2frame(p, frame.getWidth(), frame.getHeight());
+				Point3D p = new Point3D(x,y);
+				Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
 				LatLonAlt p3 = map.frame2world(p2);
-				double[] a= player.getLocation().azimuth_elevation_dist(p3);
+				double[] a = player.getLocation().azimuth_elevation_dist(p3);
 				double angle= a[0];
+				play.rotate(angle);
+				repaint();
+				
+				while(a[1] >= 1) {
+					System.out.println("distance is: " + a[1]);
+					System.out.println("in loop: " + player.getLocation());
+					a = player.getLocation().azimuth_elevation_dist(p3);
+					play.rotate(a[0]);
+//					repaint();
+					System.out.println("distance after moving: " + a[1]);
+					revalidate();
+					repaint();
+					try {
+						Thread.sleep(200);
+						repaint();
+						frame.repaint();
+					} catch (InterruptedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+				
+				System.out.println("player moved.");
+				System.out.println("located in: " + player.getLocation());
 				
 //				double angle = Math.atan(Math.abs(y2 - y) / Math.abs(x2-x));
-				System.out.println(game.getPlayer().getLocation());
-				play.rotate(angle);
-				System.out.println(game.getPlayer().getLocation());
-				repaint();
+//				System.out.println(game.getPlayer().getLocation());
+//				play.rotate(angle);
+//				System.out.println(game.getPlayer().getLocation());
+//				repaint();
 			}
 		}
 	}
