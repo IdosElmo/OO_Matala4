@@ -23,6 +23,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import GIS.*;
@@ -40,7 +41,7 @@ public class myFrame extends JPanel {
 	private ArrayList<Packman> ghosts;
 	private ArrayList<GeoBox> boxes;
 	private Game game;
-//
+	private Timer timer;
 	private BufferedImage backroundImage;
 	private BufferedImage pacmanImage;
 	private BufferedImage fruitImage;
@@ -51,8 +52,9 @@ public class myFrame extends JPanel {
 	private Play play;
 	private ArrayList<String> board_data = new ArrayList<String>();
 
+	private int clickX;
+	private int clickY;
 	private boolean gameLoaded = false;
-	private boolean gameStarted = false;
 	private boolean buttonPacman = false;
 	private boolean buttonFruit = false;
 	private JFrame frame;
@@ -83,9 +85,21 @@ public class myFrame extends JPanel {
 		boxes = new ArrayList<>();
 		game = new Game();
 		play = new Play(game);
-
 		String map_name = "C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\Ariel1.png";
-
+		
+		timer = new Timer(5, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int count = 0;
+				System.out.println(count);
+				movePlayer();
+				System.out.println(count);
+				repaint();
+			}
+		});
+		timer.setRepeats(true);
+//		timer.start();
+		
 		double lat = 32.103813D;
 		double lon = 35.207357D;
 		double alt = 0D;
@@ -185,57 +199,26 @@ public class myFrame extends JPanel {
 	public void paintComponent(Graphics g) {
 		g.drawImage(backroundImage, 0, 0, frame.getWidth(), frame.getHeight(), frame);
 		Graphics2D graphic = (Graphics2D) g;
-
-//		board_data = play.getBoard();
-//		for (int i = 0; i < board_data.size(); i++) {
-//			if (board_data.get(i).startsWith("M")) {
-//				player = new Packman(board_data.get(i));
-//				g.drawImage(playerImage, (int) player.getLocation().x(), (int) player.getLocation().y(), 30, 30, frame);
-//			}
-//			if (board_data.get(i).startsWith("P")) {
-//				Packman pac = new Packman(board_data.get(i));
-//				g.drawImage(pacmanImage, (int) pac.getLocation().x(), (int) pac.getLocation().y(), 30, 30, frame);
-//			}
-//			if (board_data.get(i).startsWith("G")) {
-//				Packman ghost = new Packman(board_data.get(i));
-//				g.drawImage(ghostImage, (int) ghost.getLocation().x(), (int) ghost.getLocation().y(), 30, 30, frame);;
-//			}
-//			if (board_data.get(i).startsWith("F")) {
-//				Fruit fruit = new Fruit(board_data.get(i));
-//				g.drawImage(fruitImage, (int) fruit.getLocation().x(), (int) fruit.getLocation().y(), 30, 30, frame);
-//			}
-//		}
-//		for (GeoBox box : boxes) {
-//		int width = (int) Math.abs(box.getMin().lat() - box.getMax().lat());
-//		int height = (int) Math.abs(box.getMax().lon() - box.getMin().lon());
-//		
-//		int x2 = (int) (box.getMin().lat());
-//		int y2 = (int) (box.getMin().lon());
-//		g.drawRect(x2, y2, width, height);
-//		g.fillRect(x2, y2, width, height);
-//	}
 		
-		for (Packman pac : pacmans) {
+		for (Packman pac : game.getRobots()) {
 			LatLonAlt test = pac.getLocation();
 			Point3D test2 = map.world2frame(test);
 			g.drawImage(pacmanImage, test2.ix(), test2.iy(), 30, 30, frame);
-
 		}
 
-		for (Packman ghost : ghosts) {
+		for (Packman ghost : game.getGhosts()) {
 			LatLonAlt test = ghost.getLocation();
 			Point3D test2 = map.world2frame(test);
 			g.drawImage(ghostImage, test2.ix(),test2.iy(), 30, 30, frame);
 		}
 
-		for (Fruit fruit : fruits) {
+		for (Fruit fruit : game.getTargets()) {
 			LatLonAlt test = fruit.getLocation();
 			Point3D test2 = map.world2frame(test);
 			g.drawImage(fruitImage, test2.ix(),  test2.iy(), 30, 30, frame);
 		}
 
 		for (GeoBox box : boxes) {
-			
 			LatLonAlt minTemp = box.getMin();
 			LatLonAlt maxTemp = box.getMax();
 			Point3D test1 = map.world2frame(minTemp);
@@ -255,11 +238,41 @@ public class myFrame extends JPanel {
 			g.fillRect(x2, y2, width, height);
 		}
 
-		if (gameStarted) { //will be false after nmouse click.
+		if (play.isRuning()) { //will be false after nmouse click.
 			Packman p = new Packman(game.getPlayer());
 			Point3D point = map.world2frame(p.getLocation());
 			g.drawImage(playerImage, point.ix() - 15, point.iy() - 65, 30, 30, frame);
 		}
+	}
+	
+	public void movePlayer() {
+//		Point3D p = new Point3D(clickX,clickY);
+//		Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
+//		LatLonAlt p3 = map.frame2world(p2);
+//		double[] a = player.getLocation().azimuth_elevation_dist(p3);
+//		double angle= a[0];
+//		play.rotate(angle);
+//		frame.repaint();
+		new Thread() {
+			public void run() {
+				Point3D p = new Point3D(clickX,clickY);
+				Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
+				LatLonAlt p3 = map.frame2world(p2);
+				double[] a = player.getLocation().azimuth_elevation_dist(p3);
+				double angle= a[0];
+				play.rotate(angle);
+				frame.repaint();
+				repaint();
+				while(a[1] >= 1) { 
+					System.out.println("distance is: " + a[1]);
+					System.out.println("in loop: " + player.getLocation());
+					a = player.getLocation().azimuth_elevation_dist(p3);
+					play.rotate(a[0]);
+					frame.repaint();
+					System.out.println("distance after moving: " + a[1]);
+				}
+			}
+		}.run();
 	}
 
 	
@@ -302,9 +315,6 @@ public class myFrame extends JPanel {
 					}
 					if (game.getGame().get(i).startsWith("P")) {
 						Packman p = new Packman(game.getGame().get(i));
-//						LatLonAlt test = p.getLocation();
-//						Point3D test2 = map.world2frame(test);
-//						p.setLocation(new LatLonAlt(test2.x(), test2.y(), test2.z()));
 						pacmans.add(p);
 					}
 					if (game.getGame().get(i).startsWith("G")) {
@@ -313,9 +323,6 @@ public class myFrame extends JPanel {
 					}
 					if (game.getGame().get(i).startsWith("F")) {
 						Fruit fruit = new Fruit(game.getGame().get(i));
-//						LatLonAlt test = fruit.getLocation();
-//						Point3D test2 = map.world2frame(test);
-//						Fruit fruit2 = new Fruit(new LatLonAlt(test2.x(), test2.y(),test.z() ));
 						fruits.add(fruit);
 					}
 					if (game.getGame().get(i).startsWith("B")) {
@@ -335,7 +342,7 @@ public class myFrame extends JPanel {
 				}
 				repaint();
 				play = new Play(game);
-				
+
 				ArrayList<String> board_data = play.getBoard();
 				for(int i=0;i<board_data.size();i++) {
 					System.out.println(board_data.get(i));
@@ -369,7 +376,6 @@ public class myFrame extends JPanel {
 			// super.mouseClicked(e);
 			System.out.println("mouse Clicked");
 			System.out.println("(" + e.getX() + "," + e.getY() + ")");
-//			play.setInitLocation(e.getX(), e.getY());
 			if (gameLoaded && e.getClickCount() == 1) {
 				Point3D point = new Point3D((double) e.getX(), (double) e.getY(), 0);
 				Point3D point2 = map.image2frame(point, frame.getWidth(), frame.getHeight());
@@ -381,54 +387,43 @@ public class myFrame extends JPanel {
 				revalidate();
 				repaint();
 				play.start();
-				gameStarted = play.isRuning();
+//				gameStarted = play.isRuning();
 				gameLoaded = false;
 			}
-			if (gameStarted) {
-				int x = e.getX();
-				int y = e.getY();
-				
-				Point3D p = new Point3D(x,y);
-				Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
-				LatLonAlt p3 = map.frame2world(p2);
-				double[] a = player.getLocation().azimuth_elevation_dist(p3);
-				double angle= a[0];
-				play.rotate(angle);
-				repaint();
-				
-				while(a[1] >= 1) {
-					System.out.println("distance is: " + a[1]);
-					System.out.println("in loop: " + player.getLocation());
-					a = player.getLocation().azimuth_elevation_dist(p3);
-					play.rotate(a[0]);
-//					repaint();
-					System.out.println("distance after moving: " + a[1]);
-					revalidate();
-					repaint();
-					try {
-						Thread.sleep(200);
-						repaint();
-						frame.repaint();
-					} catch (InterruptedException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+
+		}
+		
+		public void mousePressed(MouseEvent e) {
+			if (play.isRuning()) {
+				clickX = e.getX();
+				clickY = e.getY();
+				System.out.println(game.getGhosts(0));
+				new Thread () {
+					public void run() {
+						movePlayer();
+						try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
-				}
-				
+				}.run();
+				System.out.println(game.getGhosts(0));
 				System.out.println("player moved.");
 				System.out.println("located in: " + player.getLocation());
-				
-//				double angle = Math.atan(Math.abs(y2 - y) / Math.abs(x2-x));
-//				System.out.println(game.getPlayer().getLocation());
-//				play.rotate(angle);
-//				System.out.println(game.getPlayer().getLocation());
-//				repaint();
 			}
 		}
+		
 	}
 
 	public static void main(String[] a) {
-		new myFrame();
+		EventQueue.invokeLater(new Runnable() {
 
+            @Override
+            public void run() {
+                new myFrame();
+            }
+        });
 	}
 }
