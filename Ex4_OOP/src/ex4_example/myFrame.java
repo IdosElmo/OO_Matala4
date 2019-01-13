@@ -6,100 +6,70 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Line2D;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
+import java.util.Iterator;
+import java.util.Scanner;
 
 import javax.imageio.ImageIO;
-import javax.swing.Box;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import GIS.*;
 import Geom.Point3D;
 import Robot.*;
 import Coords.*;
 
-public class myFrame extends JPanel {
+public class myFrame extends JFrame implements MouseListener, Runnable {
 
-	private Packman player;
 
-	private ArrayList<Path> Paths;
-	private ArrayList<Packman> pacmans;
-	private ArrayList<Fruit> fruits;
-	private ArrayList<Packman> ghosts;
-	private ArrayList<GeoBox> boxes;
-	private Game game;
-	private Timer timer;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private BufferedImage backroundImage;
 	private BufferedImage pacmanImage;
 	private BufferedImage fruitImage;
 	private BufferedImage ghostImage;
 	private BufferedImage playerImage;
 
+	private Packman player;
 	private Map map;
-	private Play play;
-	private ArrayList<String> board_data = new ArrayList<String>();
-
-	private int clickX;
-	private int clickY;
+	private Play play = null;
+	private ArrayList<String> board_data;
+	private int clickX = -1;
+	private int clickY = -1;
+	private int button = 0;
 	private boolean gameLoaded = false;
-	private boolean buttonPacman = false;
-	private boolean buttonFruit = false;
-	private JFrame frame;
-	private static JMenuBar menubar;
-	private JMenu menu;
-	private JMenu menu2;
-	private JMenu menu3;
-	private JMenuItem itemPacman;
-	private JMenuItem itemFruit;
-	private JMenuItem itemSave;
-	private JMenuItem itemLoad;
-	private JMenuItem itemQuit;
-	private JMenuItem itemAPlay;
-	private JMenuItem itemMPlay;
-	private JMenuItem itemClear;
+	private boolean playerLoaded = true;
+	private boolean manualPlay = true;
+	private double[] a = { 0, 0, 0 };
+
+	private static MenuBar menubar;
+	private Menu menu;
+	private Menu menu2;
+	private MenuItem itemSave;
+	private MenuItem itemLoad;
+	private MenuItem itemQuit;
+	private MenuItem itemAPlay;
+	private MenuItem itemMPlay;
 
 	public myFrame() {
 		myGUI();
+		this.addMouseListener(this);
 	}
 
 	public void myGUI() {
-		frame = new JFrame("GIS Pacman");
-		menubar = new JMenuBar();
-		Paths = new ArrayList<>();
-		pacmans = new ArrayList<>();
-		fruits = new ArrayList<>();
-		ghosts = new ArrayList<>();
-		boxes = new ArrayList<>();
-		game = new Game();
-		play = new Play(game);
+		menubar = new MenuBar();
 		String map_name = "C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\Ariel1.png";
-		
-		timer = new Timer(5, new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				int count = 0;
-				System.out.println(count);
-				movePlayer();
-				System.out.println(count);
-				repaint();
-			}
-		});
-		timer.setRepeats(true);
-//		timer.start();
-		
+
 		double lat = 32.103813D;
 		double lon = 35.207357D;
 		double alt = 0D;
@@ -107,323 +77,335 @@ public class myFrame extends JPanel {
 		double dy = 421.0D;
 		LatLonAlt cen = new LatLonAlt(lat, lon, alt);
 		map = new Map(cen, dx, dy, map_name);
-		// map = new Map();
-//		play.setIDs(1,2,3);
 
-//		player = new Packman(new LatLonAlt(1, 0, 0), 1);
+		menu = new Menu("Game");
 
-		menu = new JMenu("Game");
-		menu.setMnemonic(KeyEvent.VK_A);
+		menu2 = new Menu("Play");
 
-		menu2 = new JMenu("Operations");
-		menu2.setMnemonic(KeyEvent.VK_O);
+		itemSave = new MenuItem("Save Game");
+		itemLoad = new MenuItem("Load Game");
+		itemQuit = new MenuItem("Quit");
+		itemAPlay = new MenuItem("Auto Play");
+		itemMPlay = new MenuItem("Manual Play");
 
-		menu3 = new JMenu("Play");
-		menu3.setMnemonic(KeyEvent.VK_P);
+//		itemSave.addActionListener(new myActionListener());
+//		itemQuit.addActionListener(new myActionListener());
 
-		itemPacman = new JMenuItem("Add Packman");
-		itemFruit = new JMenuItem("Add Fruit");
-		itemSave = new JMenuItem("Save Game");
-		itemLoad = new JMenuItem("Load Game");
-		itemQuit = new JMenuItem("Quit");
-		itemQuit.setMnemonic(KeyEvent.VK_Q);
-		itemAPlay = new JMenuItem("Auto Play");
-		itemMPlay = new JMenuItem("Manual Play");
-		itemClear = new JMenuItem("Clear");
-
-		itemPacman.addActionListener(new myActionListener());
-		itemFruit.addActionListener(new myActionListener());
-		itemSave.addActionListener(new myActionListener());
-		itemLoad.addActionListener(new myActionListener());
-		itemQuit.addActionListener(new myActionListener());
-		itemAPlay.addActionListener(new myActionListener());
-		itemClear.addActionListener(new myActionListener());
-
-		menu.add(itemSave);
-		menu.add(itemLoad);
-		menu.add(itemQuit);
-		menu2.add(itemPacman);
-		menu2.add(itemFruit);
-		menu2.add(itemClear);
-		menu3.add(itemAPlay);
-		menu3.add(itemMPlay);
-
-		try {
-			backroundImage = ImageIO.read(new File("C:\\Users\\lenovo\\workspace\\Ex4_OOP\\data\\Ariel1.PNG"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		try {
-			pacmanImage = ImageIO.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\pacman.PNG"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		try {
-			fruitImage = ImageIO.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\strawberry.PNG"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		try {
-			ghostImage = ImageIO.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\ghost.PNG"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		try {
-			playerImage = ImageIO.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\pac.gif_c200"));
-		} catch (IOException E) {
-			E.printStackTrace();
-		}
-
-		frame.setJMenuBar(menubar);
-
-		menubar.add(menu);
-		menubar.add(menu2);
-		menubar.add(menu3);
-		frame.setLayout(new BorderLayout());
-		frame.add(this, BorderLayout.CENTER);
-		frame.addMouseListener(new myAdapter());
-
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		// +
-		// setPreferredSize(size);
-		frame.getContentPane().add(this);
-		// addMouseListener(new myASize(size);
-		frame.pack();
-		frame.setSize(1433, 642);
-		frame.setResizable(false); // change
-		frame.setVisible(true);
-	}
-
-	@Override
-	public void paintComponent(Graphics g) {
-		g.drawImage(backroundImage, 0, 0, frame.getWidth(), frame.getHeight(), frame);
-		Graphics2D graphic = (Graphics2D) g;
-		
-		for (Packman pac : game.getRobots()) {
-			LatLonAlt test = pac.getLocation();
-			Point3D test2 = map.world2frame(test);
-			g.drawImage(pacmanImage, test2.ix(), test2.iy(), 30, 30, frame);
-		}
-
-		for (Packman ghost : game.getGhosts()) {
-			LatLonAlt test = ghost.getLocation();
-			Point3D test2 = map.world2frame(test);
-			g.drawImage(ghostImage, test2.ix(),test2.iy(), 30, 30, frame);
-		}
-
-		for (Fruit fruit : game.getTargets()) {
-			LatLonAlt test = fruit.getLocation();
-			Point3D test2 = map.world2frame(test);
-			g.drawImage(fruitImage, test2.ix(),  test2.iy(), 30, 30, frame);
-		}
-
-		for (GeoBox box : boxes) {
-			LatLonAlt minTemp = box.getMin();
-			LatLonAlt maxTemp = box.getMax();
-			Point3D test1 = map.world2frame(minTemp);
-			Point3D test2 = map.world2frame(maxTemp);
-			
-			LatLonAlt min = new LatLonAlt(test1.x(),test1.y(),test1.z());
-			LatLonAlt max = new LatLonAlt(test2.x(),test2.y(),test2.z());
-			
-			GeoBox box2 = new GeoBox(min,max);
-			
-			int width = (int) Math.abs(box2.getMin().lat() - box2.getMax().lat());
-			int height = (int) Math.abs(box2.getMax().lon() - box2.getMin().lon());
-			
-			int x2 = (int) (box2.getMin().lat());
-			int y2 = (int) (box2.getMin().lon());
-			g.drawRect(x2, y2, width, height);
-			g.fillRect(x2, y2, width, height);
-		}
-
-		if (play.isRuning()) { //will be false after nmouse click.
-			Packman p = new Packman(game.getPlayer());
-			Point3D point = map.world2frame(p.getLocation());
-			g.drawImage(playerImage, point.ix() - 15, point.iy() - 65, 30, 30, frame);
-		}
-	}
-	
-	public void movePlayer() {
-//		Point3D p = new Point3D(clickX,clickY);
-//		Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
-//		LatLonAlt p3 = map.frame2world(p2);
-//		double[] a = player.getLocation().azimuth_elevation_dist(p3);
-//		double angle= a[0];
-//		play.rotate(angle);
-//		frame.repaint();
-		new Thread() {
-			public void run() {
-				Point3D p = new Point3D(clickX,clickY);
-				Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
-				LatLonAlt p3 = map.frame2world(p2);
-				double[] a = player.getLocation().azimuth_elevation_dist(p3);
-				double angle= a[0];
-				play.rotate(angle);
-				frame.repaint();
-				repaint();
-				while(a[1] >= 1) { 
-					System.out.println("distance is: " + a[1]);
-					System.out.println("in loop: " + player.getLocation());
-					a = player.getLocation().azimuth_elevation_dist(p3);
-					play.rotate(a[0]);
-					frame.repaint();
-					System.out.println("distance after moving: " + a[1]);
-				}
-			}
-		}.run();
-	}
-
-	
-	public boolean isPacman() {
-		return buttonPacman;
-	}
-
-	public boolean isFruit() {
-		return buttonFruit;
-	}
-
-	private class myActionListener implements ActionListener {
-
-		@Override
-		public void actionPerformed(ActionEvent arg0) {
-			if (arg0.getSource() == itemPacman) {
-				System.out.println("pacman clicked");
-				buttonPacman = true;
-			}
-			if (arg0.getSource() == itemFruit) {
-				System.out.println("fruit clicked");
-				// fIndex = Integer.parseInt(JOptionPane.showInputDialog("Enter
-				// Number of Fruits:"));
-				buttonFruit = true;
-			}
-			if (arg0.getSource() == itemSave) {
-				String pathname = JOptionPane.showInputDialog("Enter save location:");
-				game = new Game(pathname);
-			}
-			if (arg0.getSource() == itemLoad) {
+		itemLoad.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
 				JFileChooser chooser = new JFileChooser();
 				chooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
 				chooser.showOpenDialog(null);
 				File file = chooser.getSelectedFile();
-				game = new Game(file.getPath());
-				for (int i = 0; i < game.getGame().size(); i++) {
-					if (game.getGame().get(i).startsWith("M")) {
-						player = new Packman(game.getGame().get(i));
-						game.setPlayer(player);
-					}
-					if (game.getGame().get(i).startsWith("P")) {
-						Packman p = new Packman(game.getGame().get(i));
-						pacmans.add(p);
-					}
-					if (game.getGame().get(i).startsWith("G")) {
-						Packman ghost = new Packman(game.getGame().get(i));
-						ghosts.add(ghost);
-					}
-					if (game.getGame().get(i).startsWith("F")) {
-						Fruit fruit = new Fruit(game.getGame().get(i));
-						fruits.add(fruit);
-					}
-					if (game.getGame().get(i).startsWith("B")) {
-						GeoBox box = new GeoBox(game.getGame().get(i));
-//				
-//						LatLonAlt minTemp = box.getMin();
-//						LatLonAlt maxTemp = box.getMax();
-//						Point3D test1 = map.world2frame(minTemp);
-//						Point3D test2 = map.world2frame(maxTemp);
-//						
-//						LatLonAlt min = new LatLonAlt(test1.x(),test1.y(),test1.z());
-//						LatLonAlt max = new LatLonAlt(test2.x(),test2.y(),test2.z());
-//						
-//						GeoBox box2 = new GeoBox(min,max);
-						boxes.add(box);
-					}
+				try {
+					Game game = new Game(file.getPath());
+					play = new Play(game);
+					gameLoaded = true;
+					Scanner input = new Scanner(file);
+					input.close();
+				} catch (Exception e1) {
+					e1.printStackTrace();
 				}
 				repaint();
-				play = new Play(game);
+			}
+		});
 
-				ArrayList<String> board_data = play.getBoard();
-				for(int i=0;i<board_data.size();i++) {
-					System.out.println(board_data.get(i));
+		myFrame temp = this;
+		itemAPlay.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Thread t = new Thread(temp);
+				t.start();
+			}
+		});
+		itemMPlay.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Thread t = new Thread(temp);
+				t.start();
+				manualPlay = false;
+			}
+		});
+
+		menu.add(itemSave);
+		menu.add(itemLoad);
+		menu.add(itemQuit);
+		
+		menu2.add(itemAPlay);
+		menu2.add(itemMPlay);
+
+		try {
+			backroundImage = ImageIO.read(new File("C:\\Users\\lenovo\\workspace\\Ex4_OOP\\data\\Ariel1.PNG"));
+			pacmanImage = ImageIO.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\pacman.PNG"));
+			fruitImage = ImageIO
+					.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\strawberry.PNG"));
+			ghostImage = ImageIO.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\ghost.PNG"));
+			playerImage = ImageIO
+					.read(new File("C:\\\\Users\\\\lenovo\\\\workspace\\\\Ex4_OOP\\\\data\\\\pac.gif_c200"));
+		} catch (IOException E) {
+			E.printStackTrace();
+		}
+
+		setMenuBar(menubar);
+		menubar.add(menu);
+		menubar.add(menu2);
+		setLayout(new BorderLayout());
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		pack();
+		setSize(1433, 642);
+		setResizable(false); // change
+		setVisible(true);
+	}
+
+	@Override
+	public void paint(Graphics g) {
+		g.drawImage(backroundImage, 0, 0, this.getWidth(), this.getHeight(), this);
+
+		if (clickX != -1 && clickY != -1) {
+			if (button == 1) {
+				playerLoaded = false;
+				g.drawImage(playerImage, clickX, clickY, 30, 30, this);
+				Point3D p = new Point3D(clickX, clickY);
+				Point3D p2 = map.image2frame(p, this.getWidth(), this.getHeight());
+				LatLonAlt p3 = map.frame2world(p2);				
+				player = new Packman(p3, 2);
+//				System.out.println(player.getLocation());
+				button = -1;
+				System.out.println();
+				play.setInitLocation(player.getLocation().ix(), player.getLocation().iy());
+			}
+		}
+
+		if (gameLoaded) {
+			board_data = play.getBoard();
+			Iterator<String> it = board_data.iterator();
+			while (it.hasNext()) {
+				String line = it.next();
+				if (line.startsWith("P")) {
+					Packman pacman = new Packman(line);
+					LatLonAlt test = pacman.getLocation();
+					Point3D test2 = map.world2frame(test);
+					g.drawImage(pacmanImage, test2.ix(), test2.iy(), 30, 30, this);
+				} else if (line.startsWith("G")) {
+					Packman ghost = new Packman(line);
+					LatLonAlt test = ghost.getLocation();
+					Point3D test2 = map.world2frame(test);
+					g.drawImage(ghostImage, test2.ix(), test2.iy(), 30, 30, this);
+				} else if (line.startsWith("F")) {
+					Fruit fruit = new Fruit(line);
+					LatLonAlt test = fruit.getLocation();
+					Point3D test2 = map.world2frame(test);
+					g.drawImage(fruitImage, test2.ix(), test2.iy(), 30, 30, this);
+				} else if (line.startsWith("B")) {
+					GeoBox box = new GeoBox(line);
+					LatLonAlt minTemp = box.getMin();
+					LatLonAlt maxTemp = box.getMax();
+					Point3D test1 = map.world2frame(minTemp);
+					Point3D test2 = map.world2frame(maxTemp);
+
+					LatLonAlt min = new LatLonAlt(test1.x(), test1.y(), test1.z());
+					LatLonAlt max = new LatLonAlt(test2.x(), test2.y(), test2.z());
+
+					GeoBox box2 = new GeoBox(min, max);
+
+					int width = (int) Math.abs(box2.getMin().lat() - box2.getMax().lat());
+					int height = (int) Math.abs(box2.getMax().lon() - box2.getMin().lon());
+
+					int x2 = (int) (box2.getMin().lat());
+					int y2 = (int) (box2.getMin().lon());
+					g.drawRect(x2, y2, width, height);
+					g.fillRect(x2, y2, width, height);
+				} else if (line.startsWith("M") && !playerLoaded) { // will be false after nmouse click.
+//					player = new Packman(line);
+//					System.out.println(line);
+//					System.out.println(player.getLocation());
+					Point3D point = map.world2frame(player.getLocation());
+//					System.out.println(point);
+					g.drawImage(playerImage, point.ix() - 15, point.iy() - 65, 30, 30, this);
 				}
-				
-				play.setIDs(206008153, 206008154, 206008155);
-				gameLoaded = true;
 			}
-			if (arg0.getSource() == itemClear) {
-				clearScreen();
-			}
-			if (arg0.getSource() == itemQuit)
-				System.exit(0);
-		}
-
-
-
-		public void clearScreen() {
-			game.getGame().clear();
-			pacmans.clear();
-			fruits.clear();
-			ghosts.clear();
-			boxes.clear();
-			revalidate();
-			repaint();
 		}
 	}
-	
-	private class myAdapter extends MouseAdapter {
-		public void mouseClicked(MouseEvent e) {
-			// super.mouseClicked(e);
-			System.out.println("mouse Clicked");
-			System.out.println("(" + e.getX() + "," + e.getY() + ")");
-			if (gameLoaded && e.getClickCount() == 1) {
-				Point3D point = new Point3D((double) e.getX(), (double) e.getY(), 0);
-				Point3D point2 = map.image2frame(point, frame.getWidth(), frame.getHeight());
-				LatLonAlt point3 = map.frame2world(point2);
-				player = new Packman(point3, 2);
-				game.setPlayer(player);
-				play.setInitLocation(point3.ix(), point3.iy());
-//				System.out.println("click get player :" + game.getPlayer());
-				revalidate();
-				repaint();
-				play.start();
-//				gameStarted = play.isRuning();
-				gameLoaded = false;
-			}
 
-		}
-		
-		public void mousePressed(MouseEvent e) {
-			if (play.isRuning()) {
-				clickX = e.getX();
-				clickY = e.getY();
-				System.out.println(game.getGhosts(0));
-				new Thread () {
-					public void run() {
-						movePlayer();
-						try {
-							Thread.sleep(500);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}.run();
-				System.out.println(game.getGhosts(0));
-				System.out.println("player moved.");
-				System.out.println("located in: " + player.getLocation());
-			}
-		}
-		
-	}
+//	public void movePlayer() {
+////		Point3D p = new Point3D(clickX,clickY);
+////		Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
+////		LatLonAlt p3 = map.frame2world(p2);
+////		double[] a = player.getLocation().azimuth_elevation_dist(p3);
+////		double angle= a[0];
+////		play.rotate(angle);
+////		frame.repaint();
+//		new Thread() {
+//			public void run() {
+//				Point3D p = new Point3D(clickX, clickY);
+//				Point3D p2 = map.image2frame(p, frame.getWidth(), frame.getHeight());
+//				LatLonAlt p3 = map.frame2world(p2);
+//				double[] a = player.getLocation().azimuth_elevation_dist(p3);
+//				double angle = a[0];
+//				play.rotate(angle);
+//				frame.repaint();
+//				repaint();
+//				while (a[1] >= 1) {
+//					System.out.println("distance is: " + a[1]);
+//					System.out.println("in loop: " + player.getLocation());
+//					a = player.getLocation().azimuth_elevation_dist(p3);
+//					play.rotate(a[0]);
+//					frame.repaint();
+//					System.out.println("distance after moving: " + a[1]);
+//					try {
+//						Thread.sleep(500);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
+//					repaint();
+//				}
+//			}
+//		}.run();
+//	}
+
+//	private class myActionListener implements ActionListener {
+//
+//		@Override
+//		public void actionPerformed(ActionEvent arg0) {
+//			if (arg0.getSource() == itemLoad) {
+//				JFileChooser chooser = new JFileChooser();
+//				chooser.setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
+//				chooser.showOpenDialog(null);
+//				File file = chooser.getSelectedFile();
+//				try {
+//					Play play = new Play(file.getPath());
+//					gameLoaded = true;
+//				} catch (Exception e) {
+//					// TODO: handle exception
+//				}
+//				repaint();
+//				play.setIDs(206008153, 206008154, 206008155);
+//				gameLoaded = true;
+//			}
+//			if (arg0.getSource() == itemQuit)
+//				System.exit(0);
+//		}
+//
+//	}
+
+//	private class myAdapter extends MouseAdapter {
+//		public void mouseClicked(MouseEvent e) {
+//			// super.mouseClicked(e);
+//			System.out.println("mouse Clicked");
+//			System.out.println("(" + e.getX() + "," + e.getY() + ")");
+//			if (gameLoaded && e.getClickCount() == 1) {
+//				Point3D point = new Point3D((double) e.getX(), (double) e.getY(), 0);
+//				Point3D point2 = map.image2frame(point, frame.getWidth(), frame.getHeight());
+//				LatLonAlt point3 = map.frame2world(point2);
+//				player = new Packman(point3, 2);
+//				play.setInitLocation(point3.ix(), point3.iy());
+////				System.out.println("click get player :" + game.getPlayer());
+//				revalidate();
+//				repaint();
+//				play.start();
+////				gameStarted = play.isRuning();
+//				gameLoaded = false;
+//			}
+//
+//		}
+//
+//		public void mousePressed(MouseEvent e) {
+//			if (play.isRuning()) {
+//				clickX = e.getX();
+//				clickY = e.getY();
+//
+//				System.out.println("player moved.");
+//				System.out.println("located in: " + player.getLocation());
+//			}
+//		}
+//
+//	}
 
 	public static void main(String[] a) {
 		EventQueue.invokeLater(new Runnable() {
 
-            @Override
-            public void run() {
-                new myFrame();
-            }
-        });
+			@Override
+			public void run() {
+				new myFrame();
+			}
+		});
+	}
+
+	@Override
+	public void run() {
+		if (!manualPlay) {
+			play.setIDs(206008153,205946221,315310805);
+			play.start();
+			while (play.isRuning()) {
+				System.out.println("run: "+a[0]);
+				System.out.println("run: "+a[1]);
+				System.out.println("run: "+a[2]);
+				play.rotate(a[0]);
+				try {
+					Thread.sleep(100);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+				repaint();
+			}
+			System.out.println("**** Done Game (user stop) ****");
+			String info = play.getStatistics();
+			System.out.println(info);
+			System.out.println();
+		}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		if (playerLoaded) {
+			button = e.getButton();
+			System.out.println(button);
+			clickX = e.getX();
+			clickY = e.getY();
+//			Point3D p = new Point3D(clickX, clickY);
+//			Point3D p2 = map.image2frame(p, this.getWidth(), this.getHeight());
+//			LatLonAlt p3 = map.frame2world(p2);
+
+//			player.setLocation(p3);
+//			System.out.println(player.getLocation());
+			repaint(clickX,clickY,30,30);
+			
+		} else {
+			clickX = e.getX();
+			clickY = e.getY();
+			Point3D p = new Point3D(clickX, clickY);
+			Point3D p2 = map.image2frame(p, this.getWidth(), this.getHeight());
+			LatLonAlt p3 = map.frame2world(p2);
+			System.out.println("p: "+p+",p2: "+p2+",p3: "+p3);
+			a = player.getLocation().azimuth_elevation_dist(p3);
+			System.out.println(player.getLocation());
+			System.out.println("mouseclick: "+a[0]);
+			System.out.println("mouseclick: "+a[1]);
+			System.out.println("mouseclick: "+a[2]);
+		}
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+
 	}
 }
